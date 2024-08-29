@@ -1,0 +1,88 @@
+-- Trigger for INSERT
+DELIMITER //
+
+CREATE TRIGGER after_project_insert
+AFTER INSERT ON projects
+FOR EACH ROW
+BEGIN
+    INSERT INTO project_audit (project_id, action, new_data)
+    VALUES (NEW.id, 'INSERT', JSON_OBJECT('id', NEW.id, 'name', NEW.name, 'status', NEW.status, 'created_by', NEW.created_by, 'updated_by', NEW.updated_by, 'due_date', NEW.due_date, 'created_at', NEW.created_at, 'updated_at', NEW.updated_at));
+END//
+
+DELIMITER ;
+
+-- Trigger for UPDATE
+DELIMITER $$
+CREATE TRIGGER after_project_update
+AFTER UPDATE ON projects
+FOR EACH ROW
+BEGIN
+    IF NOT (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL) THEN
+        INSERT INTO project_audit (project_id, action, old_data, new_data)
+        VALUES (NEW.id, 'UPDATE', 
+                JSON_OBJECT('id', OLD.id, 'name', OLD.name, 'status', OLD.status, 'created_by', OLD.created_by, 'updated_by', OLD.updated_by, 'due_date', OLD.due_date, 'created_at', OLD.created_at, 'updated_at', OLD.updated_at), 
+                JSON_OBJECT('id', NEW.id, 'name', NEW.name, 'status', NEW.status, 'created_by', NEW.created_by, 'updated_by', NEW.updated_by, 'due_date', NEW.due_date, 'created_at', NEW.created_at, 'updated_at', NEW.updated_at));
+    END IF;
+END$$
+DELIMITER ;
+
+
+-- Trigger for DELETE (Soft Delete)
+DELIMITER $$
+CREATE TRIGGER after_project_delete
+AFTER UPDATE ON projects
+FOR EACH ROW
+BEGIN
+    IF OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL THEN
+        -- Soft delete operation
+        INSERT INTO project_audit (project_id, action, old_data)
+        VALUES (OLD.id, 'DELETE', JSON_OBJECT('id', OLD.id, 'name', OLD.name, 'status', OLD.status, 'created_by', OLD.created_by, 'updated_by', OLD.updated_by, 'due_date', OLD.due_date, 'created_at', OLD.created_at, 'updated_at', OLD.updated_at));
+    END IF;
+END $$
+DELIMITER ;
+
+// tasks
+-- Trigger for INSERT
+DELIMITER //
+
+CREATE TRIGGER after_task_insert
+AFTER INSERT ON tasks
+FOR EACH ROW
+BEGIN
+    INSERT INTO task_audit (task_id, action, new_data)
+    VALUES (NEW.id, 'INSERT', JSON_OBJECT('id', NEW.id, 'name', NEW.name, 'description', NEW.description, 'image_path', NEW.image_path, 'status', NEW.status, 'priority', NEW.priority, 'due_date', NEW.due_date, 'assigned_user_id', NEW.assigned_user_id, 'created_by', NEW.created_by, 'updated_by', NEW.updated_by, 'project_id', NEW.project_id, 'created_at', NEW.created_at, 'updated_at', NEW.updated_at));
+END//
+
+DELIMITER ;
+
+-- Trigger for UPDATE
+DELIMITER $$
+CREATE TRIGGER after_task_update
+AFTER UPDATE ON tasks
+FOR EACH ROW
+BEGIN
+    -- Check if the update is not a soft delete operation
+    IF NOT (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL) THEN
+        INSERT INTO task_audit (task_id, action, old_data, new_data)
+        VALUES (NEW.id, 'UPDATE', 
+                JSON_OBJECT('id', OLD.id, 'name', OLD.name, 'description', OLD.description, 'image_path', OLD.image_path, 'status', OLD.status, 'priority', OLD.priority, 'due_date', OLD.due_date, 'assigned_user_id', OLD.assigned_user_id, 'created_by', OLD.created_by, 'updated_by', OLD.updated_by, 'project_id', OLD.project_id, 'created_at', OLD.created_at, 'updated_at', OLD.updated_at), 
+                JSON_OBJECT('id', NEW.id, 'name', NEW.name, 'description', NEW.description, 'image_path', NEW.image_path, 'status', NEW.status, 'priority', NEW.priority, 'due_date', NEW.due_date, 'assigned_user_id', NEW.assigned_user_id, 'created_by', NEW.created_by, 'updated_by', NEW.updated_by, 'project_id', NEW.project_id, 'created_at', NEW.created_at, 'updated_at', NEW.updated_at));
+    END IF;
+END$$
+DELIMITER ;
+
+
+-- Trigger for DELETE (Soft Delete)
+DELIMITER $$
+CREATE TRIGGER after_task_delete
+AFTER UPDATE ON tasks
+FOR EACH ROW
+BEGIN
+    IF OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL THEN
+        -- Soft delete operation
+        INSERT INTO task_audit (task_id, action, old_data)
+        VALUES (OLD.id, 'DELETE', JSON_OBJECT('id', OLD.id, 'name', OLD.name, 'description', OLD.description, 'image_path', OLD.image_path, 'status', OLD.status, 'priority', OLD.priority, 'due_date', OLD.due_date, 'assigned_user_id', OLD.assigned_user_id, 'created_by', OLD.created_by, 'updated_by', OLD.updated_by, 'project_id', OLD.project_id, 'created_at', OLD.created_at, 'updated_at', OLD.updated_at));
+    END IF;
+END$$
+DELIMITER ;
+
